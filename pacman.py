@@ -23,6 +23,21 @@ counter = 0
 flicker = False
 #Can you turn right, left, up or down
 turns_allowed = [False, False, False, False]
+direction_command= 0
+player_speed = 2 
+score = 0
+
+def check_collisions(scor):
+    num1 = (HEIGHT - 50) // 32
+    num2 = WIDTH // 30
+    if 0 < player_x < 870:
+        if level[center_y // num1][center_x // num2] == 1:
+            level[center_y // num1][center_x // num2] = 0
+            scor += 10
+        if level[center_y // num1][center_x // num2] == 2:
+            level[center_y // num1][center_x // num2] = 0
+            scor += 50
+    return scor
 
 def draw_board(lvl):
     num1 = ((HEIGHT - 50) // 32)
@@ -59,29 +74,64 @@ def draw_player():
     elif direction == 3:
         screen.blit(pygame.transform.rotate(player_images[counter // 5], 270), (player_x, player_y))
 
-def check_position(center_x, center_y):
+def check_position(centerx, centery):
     turns = [False, False, False, False]
     num1 = (HEIGHT - 50)//32
     num2 = (WIDTH // 30)
     num3 = 15
     if centerx//30 < 29:
+        #starting direction movements
         if direction == 0:
-            if level[centery//num1][(centerx - num3)// num 2] <3:
+            if level[centery//num1][(centerx - num3)// num2] < 3:
                 turns[1] = True
         if direction == 1:
-            if level[centery//num1][(centerx - num3)// num 2] <3:
-                turns[1] = True
-        if direction == 0:
-            if level[centery//num1][(centerx - num3)// num 2] <3:
-                turns[1] = True
-        if direction == 0:
-            if level[centery//num1][(centerx - num3)// num 2] <3:
-                turns[1] = True
-    
+            if level[centery//num1][(centerx + num3)// num2] < 3:
+                turns[0] = True
+        if direction == 2:
+            if level[(centery + num3) // num1][centerx // num2] < 3:
+                turns[3] = True
+        if direction == 3:
+            if level[(centery - num3) // num1][centerx // num2] < 3:
+                turns[2] = True
+        #if going up or going down
+        if direction == 2 or direction == 3:
+            if 12 <= centerx % num2 <= 18:
+                if level[(centery + num3) // num1][centerx // num2] < 3:
+                    turns[3] = True
+                if level[(centery - num3) // num1][centerx // num2] < 3:
+                    turns[2] = True
+            if 12 <= centery % num1 <= 18:
+                if level[centery // num1][(centerx - num2) // num2] < 3:
+                    turns[1] = True
+                if level[centery // num1][(centerx + num2) // num2] < 3:
+                    turns[0] = True
+        if direction == 0 or direction == 1:
+            if 12 <= centerx % num2 <= 18:
+                if level[(centery + num1) // num1][centerx // num2] < 3:
+                    turns[3] = True
+                if level[(centery - num1) // num1][centerx // num2] < 3:
+                    turns[2] = True
+            if 12 <= centery % num1 <= 18:
+                if level[centery // num1][(centerx - num3) // num2] < 3:
+                    turns[1] = True
+                if level[centery // num1][(centerx + num3) // num2] < 3:
+                    turns[0] = True
     else:
         turns[0] = True
         turns[1] = True
     return turns
+
+def move_player(play_x, play_y):
+# right=0, left=1, up=2, down=3
+    if direction == 0 and turns_allowed[0]:
+        play_x += player_speed
+    elif direction == 1 and turns_allowed[1]:
+        play_x -= player_speed
+    if direction == 2 and turns_allowed[2]:
+        play_y -= player_speed
+    elif direction == 3 and turns_allowed[3]:
+        play_y += player_speed
+    return play_x, play_y
 
 run = True
 while run:
@@ -100,19 +150,44 @@ while run:
     center_x = player_x + 23
     center_y = player_y + 24
     turns_allowed = check_position(center_x, center_y)
+    player_x, player_y = move_player(player_x, player_y)
+    score = check_collisions(score)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RIGHT:
-                direction = 0
+                direction_command = 0
             if event.key == pygame.K_LEFT:
-                direction = 1 
+                direction_command = 1 
             if event.key == pygame.K_UP:
-                direction = 2
+                direction_command = 2
             if event.key == pygame.K_DOWN:
-                direction = 3
+                direction_command = 3
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_RIGHT and direction_command == 0:
+                direction_command = direction
+            if event.key == pygame.K_LEFT and direction_command == 1:
+                direction_command = direction 
+            if event.key == pygame.K_UP and direction_command == 2:
+                direction_command = direction
+            if event.key == pygame.K_DOWN and direction_command == 3:
+                direction_command = direction
+
+    if direction_command == 0 and turns_allowed[0]:
+        direction = 0
+    if direction_command == 1 and turns_allowed[1]:
+        direction = 1
+    if direction_command == 2 and turns_allowed[2]:
+        direction = 2
+    if direction_command == 3 and turns_allowed[3]:
+        direction = 3
+
+    if player_x > 900:
+        player_x = -47
+    elif player_x < -50:
+        player_x = 897
 
     pygame.display.flip()
 pygame.quit()
